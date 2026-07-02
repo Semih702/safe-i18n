@@ -1,0 +1,8 @@
+{
+  "sourceLocale": "en",
+  "targetLocales": ["tr"],
+  "i18n": {
+    "adapter": "next-intl",
+    "messagesPath": "messages"
+  }
+}

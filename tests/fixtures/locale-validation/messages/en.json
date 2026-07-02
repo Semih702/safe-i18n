@@ -1,0 +1,13 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
+  "settings": {
+    "title": "Account settings",
+    "username": "Username",
+    "email": "Email address"
+  },
+  "greeting": "Welcome, {name}!"
+}

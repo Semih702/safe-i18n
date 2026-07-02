@@ -1,0 +1,12 @@
+{
+  "common": {
+    "save": "Kaydet",
+    "cancel": "İptal"
+  },
+  "settings": {
+    "title": "Hesap ayarları",
+    "username": "Kullanıcı adı",
+    "email": "E-posta adresi"
+  },
+  "greeting": "Hoş geldiniz!"
+}

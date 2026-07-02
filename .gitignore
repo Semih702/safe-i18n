@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tgz
+.safe-i18n/
+coverage/
+.DS_Store
+*.log
