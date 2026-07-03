@@ -20,7 +20,7 @@
  */
 "use client";
 
-import { useState } from "react";function DialogTitle({ children }: {children: React.ReactNode;}) {
+import { useState } from "react";import { useTranslations } from "next-intl";function DialogTitle({ children }: {children: React.ReactNode;}) {
   return <h2 className="text-lg font-semibold">{children}</h2>;
 }
 
@@ -51,7 +51,7 @@ function toast(message: string, opts?: {description?: string;}) {
 toast.success = (msg: string) => void msg;
 toast.error = (msg: string) => void msg;
 
-export default function ToastsDialogsPage() {  const [showDialog, setShowDialog] = useState(false);
+export default function ToastsDialogsPage() {const t = useTranslations("toasts-dialogs");const [showDialog, setShowDialog] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -74,31 +74,31 @@ export default function ToastsDialogsPage() {  const [showDialog, setShowDialog]
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Toast and Dialog Patterns</h1>
-      <p className="text-gray-600">This page tests patterns from real-world dialog and notification usage.
+      <h1 className="text-3xl font-bold">{t("toastAndDialogPatterns")}</h1>
+      <p className="text-gray-600">{t("thisPageTestsPatternsFromRealworld")}
 
       </p>
 
       {/* Dialog Title/Description — JSX text should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Dialog Components</h2>
+        <h2 className="text-xl font-semibold">{t("dialogComponents")}</h2>
 
         <div className="border rounded-lg p-4 space-y-2" data-state="open">
-          <DialogTitle>Are you sure?</DialogTitle>
-          <DialogDescription>This action cannot be undone. All of your data will be permanently
-            removed.
+          <DialogTitle>{t("areYouSure")}</DialogTitle>
+          <DialogDescription>{t("thisActionCannotBeUndoneAll")}
+
 
 
           </DialogDescription>
           <div className="flex gap-2 mt-4">
             <button
               className="px-4 py-2 bg-gray-200 rounded"
-              onClick={() => setShowDialog(false)}>Cancel
+              onClick={() => setShowDialog(false)}>{t("cancel")}
 
             </button>
             <button
               className="px-4 py-2 bg-red-600 text-white rounded"
-              onClick={handleDelete}>Delete permanently
+              onClick={handleDelete}>{t("deletePermanently")}
 
             </button>
           </div>
@@ -107,23 +107,23 @@ export default function ToastsDialogsPage() {  const [showDialog, setShowDialog]
 
       {/* AlertDialog — JSX text should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Alert Dialog</h2>
+        <h2 className="text-xl font-semibold">{t("alertDialog")}</h2>
 
         <div className="border border-red-200 rounded-lg p-4 space-y-2">
-          <AlertDialogTitle>Delete this post?</AlertDialogTitle>
-          <AlertDialogDescription>This will permanently delete your post and remove all associated
-            data.
+          <AlertDialogTitle>{t("deleteThisPost")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("thisWillPermanentlyDeleteYourPost")}
+
 
 
           </AlertDialogDescription>
           <div className="flex gap-2 mt-4">
-            <button className="px-4 py-2 bg-gray-200 rounded">Keep post
+            <button className="px-4 py-2 bg-gray-200 rounded">{t("keepPost")}
 
             </button>
             <button
               className="px-4 py-2 bg-red-600 text-white rounded"
               onClick={handleConfirm}>
-              {isDeleting ? "Deleting..." : "Yes, delete it"}
+              {isDeleting ? t("deleting") : t("yesDeleteIt")}
             </button>
           </div>
         </div>
@@ -131,21 +131,21 @@ export default function ToastsDialogsPage() {  const [showDialog, setShowDialog]
 
       {/* Alert component — JSX text should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Alert Banners</h2>
+        <h2 className="text-xl font-semibold">{t("alertBanners")}</h2>
 
         <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
-          <AlertTitle>Heads up!</AlertTitle>
-          <AlertDescription>This is a demo application using a test environment. No real
-            transactions will be processed.
+          <AlertTitle>{t("headsUp")}</AlertTitle>
+          <AlertDescription>{t("thisIsADemoApplicationUsing")}
+
 
 
           </AlertDescription>
         </div>
 
         <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-          <AlertTitle>Rate limit exceeded</AlertTitle>
-          <AlertDescription>You have reached the maximum number of requests. Please try again
-            later.
+          <AlertTitle>{t("rateLimitExceeded")}</AlertTitle>
+          <AlertDescription>{t("youHaveReachedTheMaximumNumber")}
+
 
 
           </AlertDescription>
@@ -154,26 +154,26 @@ export default function ToastsDialogsPage() {  const [showDialog, setShowDialog]
 
       {/* Toast trigger buttons — button text should translate, toast args should NOT */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Toast Triggers</h2>
-        <p className="text-sm text-gray-500">Button text is translatable. Toast message arguments are a known
-          limitation.
+        <h2 className="text-xl font-semibold">{t("toastTriggers")}</h2>
+        <p className="text-sm text-gray-500">{t("buttonTextIsTranslatableToastMessage")}
+
 
 
         </p>
         <div className="flex gap-3 flex-wrap">
           <button
             className="px-4 py-2 bg-green-600 text-white rounded"
-            onClick={() => toast.success("Profile updated successfully")}>Save changes
+            onClick={() => toast.success("Profile updated successfully")}>{t("saveChanges")}
 
           </button>
           <button
             className="px-4 py-2 bg-red-600 text-white rounded"
-            onClick={() => toast.error("Failed to save changes")}>Trigger error
+            onClick={() => toast.error("Failed to save changes")}>{t("triggerError")}
 
           </button>
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded"
-            onClick={handleConfirm}>Confirm action
+            onClick={handleConfirm}>{t("confirmAction")}
 
           </button>
         </div>

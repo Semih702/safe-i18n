@@ -1,4 +1,4 @@
-import type { TranslationRequest, KeySuggestionRequest } from "./provider.js";
+import type { TranslationRequest, KeySuggestionRequest, FilterEntry } from "./provider.js";
 
 export function buildTranslationPrompt(req: TranslationRequest): {
   system: string;
@@ -108,6 +108,44 @@ export function buildKeySuggestionPrompt(req: KeySuggestionRequest): {
   }
 
   const user = contextLines.join("\n");
+
+  return { system, user };
+}
+
+export function buildFilterPrompt(entries: FilterEntry[]): {
+  system: string;
+  user: string;
+} {
+  const system = [
+    "You are an expert at identifying which UI strings should NOT be translated in a software internationalization (i18n) project.",
+    "",
+    "A string should NOT be translated if it is:",
+    "- A brand name, product name, or company name (e.g. GitHub, Next.js, Vercel, TestApp)",
+    "- A technical term that is universally used in English across all locales (e.g. API, SDK, OAuth, JWT, webhook)",
+    "- A programming keyword, code snippet, or command (e.g. npm install, console.log)",
+    "- A proper noun that has no standard localized form",
+    "- An abbreviation or acronym that is used as-is internationally",
+    "",
+    "A string SHOULD be translated if it is:",
+    "- User-facing text in a natural language (buttons, labels, headings, descriptions, error messages)",
+    "- A common English word used as UI text, even if short (e.g. Search, Save, Cancel, Submit)",
+    "- A phrase or sentence meant for end users to read",
+    "",
+    "You will receive a JSON array of strings with their IDs and context.",
+    "Return a JSON array of objects with the format: { \"id\": \"...\", \"skip\": true/false, \"reason\": \"...\" }",
+    "Set skip=true ONLY for strings that should NOT be translated. Default to skip=false.",
+    "Return ONLY the JSON array — no markdown fences, no explanation.",
+  ].join("\n");
+
+  const items = entries.map((e) => ({
+    id: e.id,
+    text: e.text,
+    file: e.filePath,
+    component: e.component,
+    element: e.parentElement,
+  }));
+
+  const user = JSON.stringify(items, null, 2);
 
   return { system, user };
 }

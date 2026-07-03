@@ -166,6 +166,7 @@ function generateKey(source: string, propName: string | null): string {
 
 function isLikelyNonText(value: string): boolean {
   if (/^[a-z][a-zA-Z0-9]*$/.test(value) && /[A-Z]/.test(value)) return true; // camelCase identifier
+  if (/^[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+$/.test(value)) return true; // PascalCase compound (TestApp, GitHub, NextAuth)
   if (/^[A-Z_][A-Z0-9_]*$/.test(value)) return true; // CONSTANT_CASE
   if (/^[a-z0-9]+(-[a-z0-9]+)+$/.test(value)) return true; // kebab-case (requires hyphen)
   if (/^(https?:\/\/|\/[a-z])/.test(value)) return true; // URL or path

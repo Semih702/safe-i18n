@@ -1,4 +1,4 @@
-/**
+import { getTranslations } from "next-intl/server"; /**
  * TEST: Server Component — Skip Cases
  *
  * Tests strings that should NOT be translated mixed with some that should.
@@ -15,7 +15,7 @@
  *
  * EXPECT TRANSLATED: h1, h2, p text, button text, link text, alt text
  */
-export default function SkipCasesPage() {  // Console calls — should be skipped
+export default async function SkipCasesPage() {const t = await getTranslations("skip-cases"); // Console calls — should be skipped
   console.log("Page rendered successfully");
   console.error("Something went wrong");
   console.warn("Deprecated feature used");
@@ -34,14 +34,14 @@ export default function SkipCasesPage() {  // Console calls — should be skippe
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Skip Cases</h1>
-      <p className="text-gray-600">This page tests strings that should NOT be translated.
+      <h1 className="text-3xl font-bold">{t("skipCases")}</h1>
+      <p className="text-gray-600">{t("thisPageTestsStringsThatShould")}
 
       </p>
 
       {/* Technical attributes — should all be skipped */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Technical Attributes</h2>
+        <h2 className="text-xl font-semibold">{t("technicalAttributes")}</h2>
         <div
           data-testid="skip-container"
           data-cy="test-element"
@@ -52,7 +52,7 @@ export default function SkipCasesPage() {  // Console calls — should be skippe
           
           <img
             src="/placeholder.png"
-            alt="Test image for skip cases"
+            alt={t("alt_testImageForSkipCases")}
             width={200}
             height={150}
             loading="lazy"
@@ -63,7 +63,7 @@ export default function SkipCasesPage() {  // Console calls — should be skippe
 
       {/* SVG — attributes should be skipped */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">SVG Content</h2>
+        <h2 className="text-xl font-semibold">{t("svgContent")}</h2>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -82,12 +82,12 @@ export default function SkipCasesPage() {  // Console calls — should be skippe
 
       {/* Component props that should be skipped */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Component Props</h2>
+        <h2 className="text-xl font-semibold">{t("componentProps")}</h2>
         <button
           type="submit"
           name="submit-btn"
           disabled={false}
-          className="px-4 py-2 bg-blue-600 text-white rounded">This button text SHOULD be translated
+          className="px-4 py-2 bg-blue-600 text-white rounded">{t("thisButtonTextShouldBeTranslated")}
 
 
         </button>
@@ -95,7 +95,7 @@ export default function SkipCasesPage() {  // Console calls — should be skippe
           href="https://example.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 underline">This link text SHOULD be translated
+          className="text-blue-600 underline">{t("thisLinkTextShouldBeTranslated")}
 
 
         </a>

@@ -4,6 +4,8 @@ import type {
   TranslationResult,
   KeySuggestionRequest,
   KeySuggestionResult,
+  FilterEntry,
+  FilterResult,
 } from "./provider.js";
 
 const LOCALE_PREFIXES: Record<string, string> = {
@@ -96,6 +98,10 @@ export class MockProvider implements TranslationProvider {
     inputs: TranslationRequest[],
   ): Promise<TranslationResult[]> {
     return Promise.all(inputs.map((input) => this.translate(input)));
+  }
+
+  async filterTranslatable(entries: FilterEntry[]): Promise<FilterResult[]> {
+    return entries.map((e) => ({ id: e.id, shouldTranslate: true }));
   }
 
   async suggestKey(

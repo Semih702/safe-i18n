@@ -31,11 +31,26 @@ export interface KeySuggestionResult {
   description: string;
 }
 
+export interface FilterEntry {
+  id: string;
+  text: string;
+  filePath: string;
+  component?: string;
+  parentElement?: string;
+}
+
+export interface FilterResult {
+  id: string;
+  shouldTranslate: boolean;
+  reason?: string;
+}
+
 export interface TranslationProvider {
   name: string;
   translate(input: TranslationRequest): Promise<TranslationResult>;
   translateBatch?(inputs: TranslationRequest[]): Promise<TranslationResult[]>;
   suggestKey?(input: KeySuggestionRequest): Promise<KeySuggestionResult>;
+  filterTranslatable?(entries: FilterEntry[]): Promise<FilterResult[]>;
 }
 
 export interface ProviderConfig {

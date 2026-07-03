@@ -17,10 +17,11 @@ import { validateProject } from "../../validators/project-validator.js";
 import { logger, summary } from "../../utils/logger.js";
 import { getProjectRoot, resolveFromRoot, getMigrationPlanPath } from "../../utils/paths.js";
 import type { SafeI18nConfig, ApplyManifest, ManifestOperation, FileBackup, MigrationEntry } from "../../core/types.js";
+import type { FilterEntry } from "../../llm/provider.js";
 
 export const migrateCommand = new Command("migrate")
   .description(
-    "Run the full i18n migration pipeline in one command (init → scan → plan → apply → translate → setup → validate)",
+    "Run the full i18n migration pipeline in one command (init → scan → plan → pre-filter → apply → translate → setup → validate)",
   )
   .requiredOption("--to <locales>", "comma-separated target locale codes (e.g. tr,de,fr)")
   .option("--source <locale>", "source locale code", "en")
@@ -57,7 +58,7 @@ export const migrateCommand = new Command("migrate")
 
       // ── Step 1: Init ─────────────────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 1/7: Initializing project..."));
+      logger.info(chalk.bold("Step 1/8: Initializing project..."));
 
       const projectInfo = await analyzeProject(root);
       console.log(`  Framework: ${chalk.cyan(projectInfo.framework)}`);
@@ -108,7 +109,7 @@ export const migrateCommand = new Command("migrate")
 
       // ── Step 2: Scan ─────────────────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 2/7: Scanning for translatable strings..."));
+      logger.info(chalk.bold("Step 2/8: Scanning for translatable strings..."));
 
       const scanResult = await scanProject(root, config);
       logger.success(
@@ -202,7 +203,7 @@ export const migrateCommand = new Command("migrate")
 
       // ── Step 3: Plan ─────────────────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 3/7: Creating migration plan..."));
+      logger.info(chalk.bold("Step 3/8: Creating migration plan..."));
 
       const plan = createMigrationPlan(scanResult, config);
       await saveMigrationPlan(root, plan);
@@ -210,9 +211,54 @@ export const migrateCommand = new Command("migrate")
         `Plan: ${plan.summary.autoApply} apply, ${plan.summary.reviewRequired} review, ${plan.summary.skipped} skip.`,
       );
 
-      // ── Step 4: Apply transforms ─────────────────────────────────
+      // ── Step 4: LLM Pre-filter ──────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 4/7: Applying code transforms..."));
+      logger.info(chalk.bold("Step 4/8: Pre-filtering strings with LLM..."));
+
+      const provider = createProvider({
+        provider: providerName,
+        model: config.llm?.model,
+        baseUrl: config.llm?.baseUrl,
+        apiKeyEnv: config.llm?.apiKeyEnv,
+      });
+
+      if (provider.filterTranslatable) {
+        const filterEntries: FilterEntry[] = plan.entries
+          .filter((e) => e.action !== "skip")
+          .map((e) => ({
+            id: e.candidateId,
+            text: e.sourceValue,
+            filePath: e.candidate.filePath,
+            component: e.candidate.component ?? undefined,
+            parentElement: e.candidate.parentElement ?? undefined,
+          }));
+
+        const filterResults = await provider.filterTranslatable(filterEntries);
+        let skippedByLlm = 0;
+
+        for (const result of filterResults) {
+          if (!result.shouldTranslate) {
+            const entry = plan.entries.find((e) => e.candidateId === result.id);
+            if (entry && entry.action !== "skip") {
+              entry.action = "skip";
+              skippedByLlm++;
+              logger.info(`  Skip: ${chalk.dim(entry.sourceValue)}${result.reason ? ` (${result.reason})` : ""}`);
+            }
+          }
+        }
+
+        if (skippedByLlm > 0) {
+          logger.success(`LLM pre-filter skipped ${chalk.bold(String(skippedByLlm))} non-translatable string(s).`);
+        } else {
+          logger.success("All strings confirmed as translatable.");
+        }
+      } else {
+        logger.info("Provider does not support pre-filtering, skipping.");
+      }
+
+      // ── Step 5: Apply transforms ─────────────────────────────────
+      console.log("");
+      logger.info(chalk.bold("Step 5/8: Applying code transforms..."));
 
       for (const entry of plan.entries) {
         if (entry.action === "review") {
@@ -284,16 +330,9 @@ export const migrateCommand = new Command("migrate")
           `${chalk.bold(String(backups.length))} file(s). Skipped ${totalSkipped}.`,
       );
 
-      // ── Step 5: Translate ────────────────────────────────────────
+      // ── Step 6: Translate ────────────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 5/7: Translating..."));
-
-      const provider = createProvider({
-        provider: providerName,
-        model: config.llm?.model,
-        baseUrl: config.llm?.baseUrl,
-        apiKeyEnv: config.llm?.apiKeyEnv,
-      });
+      logger.info(chalk.bold("Step 6/8: Translating..."));
       logger.info(`  Provider: ${chalk.cyan(provider.name)}`);
 
       const translatableEntries = plan.entries.filter((e) => e.action !== "skip");
@@ -347,9 +386,9 @@ export const migrateCommand = new Command("migrate")
           `${chalk.bold(String(targetLocales.length))} locale(s).`,
       );
 
-      // ── Step 6: Setup i18n infrastructure ────────────────────────
+      // ── Step 7: Setup i18n infrastructure ────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 6/7: Setting up next-intl infrastructure..."));
+      logger.info(chalk.bold("Step 7/8: Setting up next-intl infrastructure..."));
 
       if (!options.dryRun) {
         const setupFiles = await setupNextIntl({
@@ -364,9 +403,9 @@ export const migrateCommand = new Command("migrate")
         logger.info(chalk.yellow("  Skipped (dry run)."));
       }
 
-      // ── Step 7: Validate ─────────────────────────────────────────
+      // ── Step 8: Validate ─────────────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 7/7: Validating..."));
+      logger.info(chalk.bold("Step 8/8: Validating..."));
 
       const validationResult = await validateProject({ root, config });
 

@@ -4,10 +4,13 @@ import type {
   TranslationResult,
   KeySuggestionRequest,
   KeySuggestionResult,
+  FilterEntry,
+  FilterResult,
 } from "./provider.js";
 import {
   buildTranslationPrompt,
   buildKeySuggestionPrompt,
+  buildFilterPrompt,
 } from "./prompts.js";
 
 interface ChatMessage {
@@ -156,6 +159,45 @@ export class OpenAICompatibleProvider implements TranslationProvider {
       results.push(await this.translate(input));
     }
     return results;
+  }
+
+  async filterTranslatable(entries: FilterEntry[]): Promise<FilterResult[]> {
+    if (entries.length === 0) return [];
+
+    const BATCH_SIZE = 50;
+    const allResults: FilterResult[] = [];
+
+    for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+      const batch = entries.slice(i, i + BATCH_SIZE);
+      const { system, user } = buildFilterPrompt(batch);
+
+      const raw = await this.chatCompletion([
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ]);
+
+      const cleaned = raw
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+
+      try {
+        const parsed = JSON.parse(cleaned) as Array<{ id: string; skip: boolean; reason?: string }>;
+        for (const item of parsed) {
+          allResults.push({
+            id: item.id,
+            shouldTranslate: !item.skip,
+            reason: item.reason,
+          });
+        }
+      } catch {
+        for (const entry of batch) {
+          allResults.push({ id: entry.id, shouldTranslate: true });
+        }
+      }
+    }
+
+    return allResults;
   }
 
   async suggestKey(

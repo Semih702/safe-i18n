@@ -1,4 +1,4 @@
-/**
+import { getTranslations } from "next-intl/server"; /**
  * TEST: Server Component — Empty States & Logical Expressions
  *
  * Tests patterns found across blog, midday, skateshop, taxonomy, platforms, commerce.
@@ -36,7 +36,7 @@ function EmptyState({
 
 }
 
-export default function EmptyStatesPage() {  const items: string[] = [];
+export default async function EmptyStatesPage() {const t = await getTranslations("empty-states");const items: string[] = [];
   const posts: string[] = [];
   const searchResults: string[] = [];
   const count: number = 0;
@@ -56,22 +56,22 @@ export default function EmptyStatesPage() {  const items: string[] = [];
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Empty States and Error Patterns</h1>
-      <p className="text-gray-600">This page tests empty state, error boundary, and logical expression
-        patterns from real-world projects.
+      <h1 className="text-3xl font-bold">{t("emptyStatesAndErrorPatterns")}</h1>
+      <p className="text-gray-600">{t("thisPageTestsEmptyStateError")}
+
 
 
       </p>
 
       {/* Standard empty state text — should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Standard Empty States</h2>
+        <h2 className="text-xl font-semibold">{t("standardEmptyStates")}</h2>
 
         {items.length === 0 &&
         <div className="text-center py-8">
-            <p className="text-gray-500">No items found</p>
-            <p className="text-sm text-gray-400">Try adjusting your search or filters to find what you are looking
-              for.
+            <p className="text-gray-500">{t("noItemsFound")}</p>
+            <p className="text-sm text-gray-400">{t("tryAdjustingYourSearchOrFilters")}
+
 
 
           </p>
@@ -80,8 +80,8 @@ export default function EmptyStatesPage() {  const items: string[] = [];
 
         {posts.length === 0 &&
         <div className="text-center py-8">
-            <h3 className="font-medium">No posts created</h3>
-            <p className="text-sm text-gray-500">You do not have any posts yet. Start creating content.
+            <h3 className="font-medium">{t("noPostsCreated")}</h3>
+            <p className="text-sm text-gray-500">{t("youDoNotHaveAnyPosts")}
 
           </p>
           </div>
@@ -90,26 +90,26 @@ export default function EmptyStatesPage() {  const items: string[] = [];
 
       {/* Custom component empty states — should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Component Empty States</h2>
+        <h2 className="text-xl font-semibold">{t("componentEmptyStates")}</h2>
 
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
 
         <EmptyState
-          title="No files uploaded"
-          description="Upload some files to see them here" />
+          title={t("title_noFilesUploaded")}
+          description={t("uploadSomeFilesToSeeThem")} />
         
 
         <EmptyState
-          title="No notifications"
-          description="You are all caught up!" />
+          title={t("title_noNotifications")}
+          description={t("youAreAllCaughtUp")} />
         
       </section>
 
       {/* Logical AND with strings — SCANNER BUG: not currently caught */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Logical AND Expressions</h2>
-        <p className="text-sm text-gray-400">These use logical AND to conditionally show strings. Scanner should
-          catch these but currently does not.
+        <h2 className="text-xl font-semibold">{t("logicalAndExpressions")}</h2>
+        <p className="text-sm text-gray-400">{t("theseUseLogicalAndToConditionally")}
+
 
 
         </p>
@@ -138,18 +138,18 @@ export default function EmptyStatesPage() {  const items: string[] = [];
 
       {/* Error boundary fallback — JSX text should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Error Boundary Fallback</h2>
+        <h2 className="text-xl font-semibold">{t("errorBoundaryFallback")}</h2>
 
         <div className="border border-red-200 bg-red-50 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-medium text-red-800">Something went wrong
+          <h3 className="text-lg font-medium text-red-800">{t("somethingWentWrong")}
 
           </h3>
-          <p className="text-sm text-red-600 mt-2">There was an issue with our application. This could be a temporary
-            issue, please try your action again.
+          <p className="text-sm text-red-600 mt-2">{t("thereWasAnIssueWithOur")}
+
 
 
           </p>
-          <button className="mt-4 px-4 py-2 bg-red-600 text-white rounded">Try Again
+          <button className="mt-4 px-4 py-2 bg-red-600 text-white rounded">{t("tryAgain")}
 
           </button>
         </div>
@@ -157,19 +157,19 @@ export default function EmptyStatesPage() {  const items: string[] = [];
 
       {/* Not Found page pattern — JSX text should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Not Found States</h2>
+        <h2 className="text-xl font-semibold">{t("notFoundStates")}</h2>
 
         <div className="text-center py-8">
-          <h3 className="text-2xl font-bold">Page Not Found</h3>
-          <p className="text-gray-500 mt-2">Sorry, we could not find the page you are looking for.
+          <h3 className="text-2xl font-bold">{t("pageNotFound")}</h3>
+          <p className="text-gray-500 mt-2">{t("sorryWeCouldNotFindThe")}
 
           </p>
-          <p className="text-gray-400 text-sm mt-1">But do not worry, you can find plenty of other things on our
-            homepage.
+          <p className="text-gray-400 text-sm mt-1">{t("butDoNotWorryYouCan")}
+
 
 
           </p>
-          <a href="/" className="mt-4 inline-block text-blue-600 underline">Back to homepage
+          <a href="/" className="mt-4 inline-block text-blue-600 underline">{t("backToHomepage")}
 
           </a>
         </div>

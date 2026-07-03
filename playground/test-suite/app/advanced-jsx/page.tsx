@@ -1,4 +1,4 @@
-/**
+import { getTranslations } from "next-intl/server"; /**
  * TEST: Server Component — Advanced JSX Patterns
  *
  * Tests patterns found across commerce, blog, midday, skateshop, taxonomy, platforms.
@@ -69,23 +69,23 @@ function EmptyPlaceholder({
 
 }
 
-export default function AdvancedJsxPage() {  const count: number = 5;
+export default async function AdvancedJsxPage() {const t = await getTranslations("advanced-jsx");const count: number = 5;
   const isCopied = false;
   const isPublished = true;
   const planType: string = "free";
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Advanced JSX Patterns</h1>
-      <p className="text-gray-600">This page tests template literals, multi-line text, custom component
-        props, plural patterns, and other advanced JSX patterns.
+      <h1 className="text-3xl font-bold">{t("advancedJsxPatterns")}</h1>
+      <p className="text-gray-600">{t("thisPageTestsTemplateLiteralsMultiline")}
+
 
 
       </p>
 
       {/* Template literal without expressions — should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Template Literals Without Variables</h2>
+        <h2 className="text-xl font-semibold">{t("templateLiteralsWithoutVariables")}</h2>
         <p className="text-gray-600">{`Welcome to our platform`}</p>
         <p className="text-gray-600">{`Don't miss out on this opportunity!`}</p>
         <p className="text-gray-600">
@@ -95,14 +95,14 @@ export default function AdvancedJsxPage() {  const count: number = 5;
 
       {/* Multi-line JSX text — should merge into single string */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Multi-line Text</h2>
-        <p className="text-gray-600">This is a long paragraph that spans multiple lines in the source code
-          and should be treated as a single translatable string by the scanner.
+        <h2 className="text-xl font-semibold">{t("multilineText")}</h2>
+        <p className="text-gray-600">{t("thisIsALongParagraphThat")}
+
 
 
         </p>
-        <p className="text-gray-600">Our platform helps you build, deploy, and scale your applications with
-          ease. Get started today and see the difference.
+        <p className="text-gray-600">{t("ourPlatformHelpsYouBuildDeploy")}
+
 
 
         </p>
@@ -110,70 +110,70 @@ export default function AdvancedJsxPage() {  const count: number = 5;
 
       {/* Plural ternary patterns — should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Plural Patterns</h2>
+        <h2 className="text-xl font-semibold">{t("pluralPatterns")}</h2>
         <p className="text-gray-600">
-          {count} {count === 1 ? "item" : "items"}in your cart
+          {count} {count === 1 ? t("item") : t("items")}{t("inYourCart")}
         </p>
         <p className="text-gray-600">
-          {count} {count === 1 ? "result found" : "results found"}
+          {count} {count === 1 ? t("resultFound") : t("resultsFound")}
         </p>
       </section>
 
       {/* Ternary display text — should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Ternary Display Text</h2>
+        <h2 className="text-xl font-semibold">{t("ternaryDisplayText")}</h2>
         <div className="flex gap-3 flex-wrap">
           <button className="px-4 py-2 border rounded">
-            {isCopied ? "Copied" : "Copy to clipboard"}
+            {isCopied ? t("copied") : t("copyToClipboard")}
           </button>
           <span className="px-2 py-1 text-sm rounded bg-gray-100">
-            {isPublished ? "Published" : "Draft"}
+            {isPublished ? t("published") : t("draft")}
           </span>
           <button className="px-4 py-2 bg-blue-600 text-white rounded">
-            {planType === "pro" ? "Manage Subscription" : "Upgrade to Pro"}
+            {planType === "pro" ? t("manageSubscription") : t("upgradeToPro")}
           </button>
         </div>
       </section>
 
       {/* Custom component props — should be translated */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Custom Component Props</h2>
+        <h2 className="text-xl font-semibold">{t("customComponentProps")}</h2>
 
-        <Card heading="Features" subheading="What we offer">
-          <p className="text-gray-600 mt-2">Explore our comprehensive feature set.
-
-          </p>
-        </Card>
-
-        <Card heading="Getting Started" subheading="Quick setup guide">
-          <p className="text-gray-600 mt-2">Follow these steps to set up your project.
+        <Card heading={t("features")} subheading={t("whatWeOffer")}>
+          <p className="text-gray-600 mt-2">{t("exploreOurComprehensiveFeatureSet")}
 
           </p>
         </Card>
 
-        <Tooltip content="Click to copy this value">
-          <button className="px-3 py-1 border rounded text-sm">Copy link
+        <Card heading={t("gettingStarted")} subheading={t("quickSetupGuide")}>
+          <p className="text-gray-600 mt-2">{t("followTheseStepsToSetUp")}
+
+          </p>
+        </Card>
+
+        <Tooltip content={t("clickToCopyThisValue")}>
+          <button className="px-3 py-1 border rounded text-sm">{t("copyLink")}
 
           </button>
         </Tooltip>
 
         <div className="flex gap-2 flex-wrap">
-          <Badge text="New" />
-          <Badge text="Featured" />
-          <Badge text="Popular" />
+          <Badge text={t("new")} />
+          <Badge text={t("featured")} />
+          <Badge text={t("popular")} />
         </div>
 
-        <Alert message="Your session will expire soon. Please save your work." />
+        <Alert message={t("yourSessionWillExpireSoonPlease")} />
 
         <EmptyPlaceholder
-          title="No notifications"
-          description="You are all caught up! Check back later for updates." />
+          title={t("title_noNotifications")}
+          description={t("youAreAllCaughtUpCheck")} />
         
       </section>
 
       {/* dangerouslySetInnerHTML — should be SKIPPED */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Dangerous HTML</h2>
+        <h2 className="text-xl font-semibold">{t("dangerousHtml")}</h2>
         <div
           dangerouslySetInnerHTML={{
             __html: "<strong>Bold text</strong> with <em>emphasis</em>"
@@ -188,9 +188,9 @@ export default function AdvancedJsxPage() {  const count: number = 5;
 
       {/* Spread props — KNOWN LIMITATION, scanner can't see through spread */}
       <section className="p-6 bg-white rounded-xl shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold">Spread Props</h2>
-        <p className="text-sm text-gray-400">Scanner cannot trace text values through spread operators. This is a
-          known limitation.
+        <h2 className="text-xl font-semibold">{t("spreadProps")}</h2>
+        <p className="text-sm text-gray-400">{t("scannerCannotTraceTextValuesThrough")}
+
 
 
         </p>

@@ -18,6 +18,7 @@ import { loadManifest, saveManifest } from "../../core/manifest.js";
 import { logger, summary } from "../../utils/logger.js";
 import { getProjectRoot, getManifestPath, resolveFromRoot } from "../../utils/paths.js";
 import type { MigrationEntry, ApplyManifest, ManifestOperation, FileBackup } from "../../core/types.js";
+import type { FilterEntry } from "../../llm/provider.js";
 
 export const syncCommand = new Command("sync")
   .description(
@@ -66,7 +67,7 @@ export const syncCommand = new Command("sync")
 
       // ── Step 1: Scan ─────────────────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 1/4: Scanning for new untranslated strings..."));
+      logger.info(chalk.bold("Step 1/5: Scanning for new untranslated strings..."));
 
       const scanResult = await scanProject(root, config);
 
@@ -80,11 +81,61 @@ export const syncCommand = new Command("sync")
         `Found ${chalk.bold(String(scanResult.candidates.length))} new untranslated string(s).`,
       );
 
-      // ── Step 2: Transform ────────────────────────────────────────
+      // ── Step 2: LLM Pre-filter ──────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 2/4: Applying code transforms..."));
+      logger.info(chalk.bold("Step 2/5: Pre-filtering strings with LLM..."));
 
       const plan = createMigrationPlan(scanResult, config);
+
+      const providerName =
+        options.provider ??
+        config.llm?.provider ??
+        (options.apiKeyEnv ? "openai-compatible" : "mock");
+
+      const provider = createProvider({
+        provider: providerName,
+        model: options.model ?? config.llm?.model,
+        baseUrl: options.baseUrl ?? config.llm?.baseUrl ?? "https://api.openai.com/v1",
+        apiKeyEnv: options.apiKeyEnv ?? config.llm?.apiKeyEnv,
+      });
+
+      if (provider.filterTranslatable) {
+        const filterEntries: FilterEntry[] = plan.entries
+          .filter((e) => e.action !== "skip")
+          .map((e) => ({
+            id: e.candidateId,
+            text: e.sourceValue,
+            filePath: e.candidate.filePath,
+            component: e.candidate.component ?? undefined,
+            parentElement: e.candidate.parentElement ?? undefined,
+          }));
+
+        const filterResults = await provider.filterTranslatable(filterEntries);
+        let skippedByLlm = 0;
+
+        for (const result of filterResults) {
+          if (!result.shouldTranslate) {
+            const entry = plan.entries.find((e) => e.candidateId === result.id);
+            if (entry && entry.action !== "skip") {
+              entry.action = "skip";
+              skippedByLlm++;
+              logger.info(`  Skip: ${chalk.dim(entry.sourceValue)}${result.reason ? ` (${result.reason})` : ""}`);
+            }
+          }
+        }
+
+        if (skippedByLlm > 0) {
+          logger.success(`LLM pre-filter skipped ${chalk.bold(String(skippedByLlm))} non-translatable string(s).`);
+        } else {
+          logger.success("All strings confirmed as translatable.");
+        }
+      } else {
+        logger.info("Provider does not support pre-filtering, skipping.");
+      }
+
+      // ── Step 3: Transform ────────────────────────────────────────
+      console.log("");
+      logger.info(chalk.bold("Step 3/5: Applying code transforms..."));
 
       for (const entry of plan.entries) {
         if (entry.action === "review") {
@@ -149,9 +200,9 @@ export const syncCommand = new Command("sync")
 
       logger.success(`Applied ${chalk.bold(String(totalApplied))} new transform(s).`);
 
-      // ── Step 3: Update source messages ───────────────────────────
+      // ── Step 4: Update source messages ───────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 3/4: Updating source messages..."));
+      logger.info(chalk.bold("Step 4/5: Updating source messages..."));
 
       const existingSource = await readJsonFile<Record<string, unknown>>(sourceFile);
 
@@ -172,22 +223,9 @@ export const syncCommand = new Command("sync")
 
       logger.success(`Updated ${config.sourceLocale}.json with ${newMessagesResult.keyCount} new key(s).`);
 
-      // ── Step 4: Translate ────────────────────────────────────────
+      // ── Step 5: Translate ────────────────────────────────────────
       console.log("");
-      logger.info(chalk.bold("Step 4/4: Translating new strings..."));
-
-      const providerName =
-        options.provider ??
-        config.llm?.provider ??
-        (options.apiKeyEnv ? "openai-compatible" : "mock");
-
-      const provider = createProvider({
-        provider: providerName,
-        model: options.model ?? config.llm?.model,
-        baseUrl: options.baseUrl ?? config.llm?.baseUrl ?? "https://api.openai.com/v1",
-        apiKeyEnv: options.apiKeyEnv ?? config.llm?.apiKeyEnv,
-      });
-
+      logger.info(chalk.bold("Step 5/5: Translating new strings..."));
       logger.info(`Provider: ${chalk.cyan(provider.name)}`);
 
       const translatableEntries = plan.entries.filter((e) => e.action !== "skip");

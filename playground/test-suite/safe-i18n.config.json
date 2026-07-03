@@ -1,0 +1,33 @@
+{
+  "sourceLocale": "en",
+  "targetLocales": [
+    "tr"
+  ],
+  "include": [
+    "src/**/*.{ts,tsx,js,jsx}",
+    "app/**/*.{ts,tsx,js,jsx}",
+    "components/**/*.{ts,tsx,js,jsx}",
+    "pages/**/*.{ts,tsx,js,jsx}",
+    "lib/**/*.{ts,tsx,js,jsx}"
+  ],
+  "exclude": [
+    "node_modules/**",
+    ".next/**",
+    "dist/**",
+    "build/**",
+    "coverage/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.d.ts",
+    "messages/**",
+    "app/api/**"
+  ],
+  "i18n": {
+    "adapter": "next-intl",
+    "messagesPath": "messages",
+    "namespaceStrategy": "route-based"
+  },
+  "validation": {
+    "commands": []
+  }
+}
