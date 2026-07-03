@@ -1,7 +1,7 @@
 {
   "name": "safe-i18n",
   "version": "0.1.0",
-  "description": "AI-assisted i18n migration CLI — safe, review-first, semantic internationalization for React/Next.js projects",
+  "description": "AI-assisted i18n migration CLI for React/Next.js that helps coding agents add localization safely",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,11 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "AGENTS.md",
+    "llms.txt",
+    "docs/agent-usage.md",
+    "docs/architecture.md"
   ],
   "scripts": {
     "build": "tsup",
@@ -22,6 +26,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -36,13 +41,27 @@
     "translation",
     "cli",
     "safe",
-    "ai-assisted"
+    "ai-assisted",
+    "llm",
+    "ai",
+    "ai-agent",
+    "coding-agent",
+    "developer-tools",
+    "static-analysis",
+    "localization-tools"
   ],
-  "author": "",
+  "author": "semih702",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/safe-i18n"
+    "url": "git+https://github.com/Semih702/safe-i18n.git"
+  },
+  "homepage": "https://github.com/Semih702/safe-i18n#readme",
+  "bugs": {
+    "url": "https://github.com/Semih702/safe-i18n/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">=18.0.0"

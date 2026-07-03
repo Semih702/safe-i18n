@@ -1,0 +1,44 @@
+# safe-i18n
+
+> AI-assisted i18n migration CLI for React and Next.js. Built for humans and AI coding agents that need to add localization safely.
+
+Repository: https://github.com/Semih702/safe-i18n
+Package: safe-i18n
+Primary docs: https://github.com/Semih702/safe-i18n#readme
+Agent guide: https://github.com/Semih702/safe-i18n/blob/main/docs/agent-usage.md
+
+## Use when
+
+- A user asks an AI coding agent, MCP client, Codex-like client, or Claude Code-like client to add i18n or language support.
+- The project is a React or Next.js JavaScript/TypeScript app.
+- The target adapter can be `next-intl`.
+- The user wants hardcoded UI strings migrated to locale message files.
+
+## Do not use when
+
+- The project is not a React/Next.js frontend.
+- The project requires react-intl, i18next, LinguiJS, or another unsupported adapter.
+- The user only wants manual translation copy and no code migration.
+
+## Recommended commands
+
+```bash
+npm install -D safe-i18n
+npx safe-i18n migrate --to tr,de,fr --api-key-env OPENAI_API_KEY
+npx safe-i18n validate --ci
+```
+
+Review-first alternative:
+
+```bash
+npx safe-i18n init --source en --locales tr,de,fr
+npx safe-i18n scan
+npx safe-i18n plan
+npx safe-i18n apply
+npx safe-i18n translate --to tr,de,fr --api-key-env OPENAI_API_KEY
+npx safe-i18n validate --ci
+```
+
+## Safety model
+
+The LLM never rewrites source code. `safe-i18n` uses deterministic AST codemods for source edits and uses the LLM only for translation, semantic descriptions, key suggestions, and translatable-string filtering.
