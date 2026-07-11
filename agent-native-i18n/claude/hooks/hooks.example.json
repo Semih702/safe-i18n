@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/settings-schema.json",
+  "_comment": "Example Claude Code hooks for i18n validation. Copy relevant entries to your .claude/settings.json or .claude/settings.local.json under the 'hooks' key.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash agent-native-i18n/claude/hooks/validate-i18n-after-edit.sh \"$TOOL_INPUT_FILE_PATH\"",
+            "timeout": 15000,
+            "description": "Validate i18n files after edits to locale JSON files"
+          }
+        ]
+      }
+    ]
+  }
+}

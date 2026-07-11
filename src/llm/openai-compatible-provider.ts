@@ -9,6 +9,7 @@ import type {
 } from "./provider.js";
 import {
   buildTranslationPrompt,
+  buildBatchTranslationPrompt,
   buildKeySuggestionPrompt,
   buildFilterPrompt,
 } from "./prompts.js";
@@ -33,6 +34,11 @@ interface ChatCompletionResponse {
   choices: ChatCompletionChoice[];
 }
 
+interface BatchTranslationItem {
+  id: string;
+  translatedText: string;
+}
+
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 
@@ -42,25 +48,16 @@ export class OpenAICompatibleProvider implements TranslationProvider {
   private readonly baseUrl: string;
   private readonly apiKeyEnv: string;
 
-  constructor(options: {
-    model?: string;
-    baseUrl?: string;
-    apiKeyEnv?: string;
-  }) {
+  constructor(options: { model?: string; baseUrl?: string; apiKeyEnv?: string }) {
     this.model = options.model ?? "gpt-4o-mini";
-    this.baseUrl = (options.baseUrl ?? "https://api.openai.com/v1").replace(
-      /\/$/,
-      "",
-    );
+    this.baseUrl = (options.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "");
     this.apiKeyEnv = options.apiKeyEnv ?? "OPENAI_API_KEY";
   }
 
   private getApiKey(): string {
     const key = process.env[this.apiKeyEnv];
     if (!key) {
-      throw new Error(
-        `Missing API key: set the ${this.apiKeyEnv} environment variable`,
-      );
+      throw new Error(`Missing API key: set the ${this.apiKeyEnv} environment variable`);
     }
     return key;
   }
@@ -99,9 +96,7 @@ export class OpenAICompatibleProvider implements TranslationProvider {
 
         if (!response.ok) {
           const errorBody = await response.text();
-          throw new Error(
-            `LLM API error (${response.status}): ${errorBody}`,
-          );
+          throw new Error(`LLM API error (${response.status}): ${errorBody}`);
         }
 
         const data = (await response.json()) as ChatCompletionResponse;
@@ -111,8 +106,7 @@ export class OpenAICompatibleProvider implements TranslationProvider {
         }
         return content.trim();
       } catch (error) {
-        lastError =
-          error instanceof Error ? error : new Error(String(error));
+        lastError = error instanceof Error ? error : new Error(String(error));
 
         // Don't retry on auth or validation errors
         if (
@@ -136,6 +130,52 @@ export class OpenAICompatibleProvider implements TranslationProvider {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  private stripJsonFences(raw: string): string {
+    return raw
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+  }
+
+  private parseBatchTranslations(raw: string, expectedCount: number): Map<number, string> {
+    const cleaned = this.stripJsonFences(raw);
+    const parsed = JSON.parse(cleaned) as unknown;
+    const translations = new Map<number, string>();
+
+    if (Array.isArray(parsed)) {
+      for (const item of parsed) {
+        if (
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as BatchTranslationItem).id === "string" &&
+          typeof (item as BatchTranslationItem).translatedText === "string"
+        ) {
+          const index = Number.parseInt((item as BatchTranslationItem).id, 10);
+          if (Number.isInteger(index) && index >= 0 && index < expectedCount) {
+            translations.set(index, (item as BatchTranslationItem).translatedText);
+          }
+        }
+      }
+      return translations;
+    }
+
+    if (typeof parsed === "object" && parsed !== null) {
+      for (const [id, value] of Object.entries(parsed)) {
+        const index = Number.parseInt(id, 10);
+        if (
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index < expectedCount &&
+          typeof value === "string"
+        ) {
+          translations.set(index, value);
+        }
+      }
+    }
+
+    return translations;
+  }
+
   async translate(input: TranslationRequest): Promise<TranslationResult> {
     const { system, user } = buildTranslationPrompt(input);
 
@@ -150,15 +190,49 @@ export class OpenAICompatibleProvider implements TranslationProvider {
     };
   }
 
-  async translateBatch(
-    inputs: TranslationRequest[],
-  ): Promise<TranslationResult[]> {
-    // Process sequentially to respect rate limits
-    const results: TranslationResult[] = [];
-    for (const input of inputs) {
-      results.push(await this.translate(input));
+  async translateBatch(inputs: TranslationRequest[]): Promise<TranslationResult[]> {
+    if (inputs.length === 0) {
+      return [];
     }
-    return results;
+
+    if (inputs.length === 1) {
+      const input = inputs[0];
+      if (!input) return [];
+      return [await this.translate(input)];
+    }
+
+    try {
+      const { system, user } = buildBatchTranslationPrompt(inputs);
+      const raw = await this.chatCompletion([
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ]);
+
+      const translatedByIndex = this.parseBatchTranslations(raw, inputs.length);
+      const results: TranslationResult[] = [];
+
+      for (let index = 0; index < inputs.length; index++) {
+        const translatedText = translatedByIndex.get(index);
+        const input = inputs[index];
+
+        if (translatedText !== undefined) {
+          results.push({
+            translatedText,
+            confidence: 0.85,
+          });
+        } else if (input) {
+          results.push(await this.translate(input));
+        }
+      }
+
+      return results;
+    } catch {
+      const results: TranslationResult[] = [];
+      for (const input of inputs) {
+        results.push(await this.translate(input));
+      }
+      return results;
+    }
   }
 
   async filterTranslatable(entries: FilterEntry[]): Promise<FilterResult[]> {
@@ -176,10 +250,7 @@ export class OpenAICompatibleProvider implements TranslationProvider {
         { role: "user", content: user },
       ]);
 
-      const cleaned = raw
-        .replace(/^```(?:json)?\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .trim();
+      const cleaned = this.stripJsonFences(raw);
 
       try {
         const parsed = JSON.parse(cleaned) as Array<{ id: string; skip: boolean; reason?: string }>;
@@ -200,9 +271,7 @@ export class OpenAICompatibleProvider implements TranslationProvider {
     return allResults;
   }
 
-  async suggestKey(
-    input: KeySuggestionRequest,
-  ): Promise<KeySuggestionResult> {
+  async suggestKey(input: KeySuggestionRequest): Promise<KeySuggestionResult> {
     const { system, user } = buildKeySuggestionPrompt(input);
 
     const raw = await this.chatCompletion([
@@ -211,24 +280,15 @@ export class OpenAICompatibleProvider implements TranslationProvider {
     ]);
 
     // Strip markdown code fences if the model wraps the JSON
-    const cleaned = raw
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
+    const cleaned = this.stripJsonFences(raw);
 
     const parsed = JSON.parse(cleaned) as Record<string, unknown>;
 
-    const namespace = typeof parsed["namespace"] === "string"
-      ? parsed["namespace"]
-      : "common";
+    const namespace = typeof parsed["namespace"] === "string" ? parsed["namespace"] : "common";
 
-    const key = typeof parsed["key"] === "string"
-      ? parsed["key"]
-      : "untitled";
+    const key = typeof parsed["key"] === "string" ? parsed["key"] : "untitled";
 
-    const description = typeof parsed["description"] === "string"
-      ? parsed["description"]
-      : "";
+    const description = typeof parsed["description"] === "string" ? parsed["description"] : "";
 
     return { namespace, key, description };
   }

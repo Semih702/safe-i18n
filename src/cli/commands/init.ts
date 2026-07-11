@@ -5,6 +5,7 @@ import { writeConfig } from "../../core/config.js";
 import type { SafeI18nConfig } from "../../core/types.js";
 import { logger } from "../../utils/logger.js";
 import { getProjectRoot } from "../../utils/paths.js";
+import { confirmPrompt } from "../../utils/prompt.js";
 
 export const initCommand = new Command("init")
   .description("Initialize safe-i18n configuration for this project")
@@ -20,18 +21,45 @@ export const initCommand = new Command("init")
     console.log("");
     console.log(chalk.bold("Project detected:"));
     console.log(`  Framework:       ${chalk.cyan(projectInfo.framework)}`);
-    console.log(`  TypeScript:      ${projectInfo.hasTypeScript ? chalk.green("yes") : chalk.yellow("no")}`);
-    console.log(`  App Router:      ${projectInfo.hasAppRouter ? chalk.green("yes") : chalk.gray("no")}`);
-    console.log(`  Pages Router:    ${projectInfo.hasPagesRouter ? chalk.green("yes") : chalk.gray("no")}`);
-    console.log(`  src/ directory:  ${projectInfo.hasSrcDirectory ? chalk.green("yes") : chalk.gray("no")}`);
+    console.log(
+      `  TypeScript:      ${projectInfo.hasTypeScript ? chalk.green("yes") : chalk.yellow("no")}`,
+    );
+    console.log(
+      `  App Router:      ${projectInfo.hasAppRouter ? chalk.green("yes") : chalk.gray("no")}`,
+    );
+    console.log(
+      `  Pages Router:    ${projectInfo.hasPagesRouter ? chalk.green("yes") : chalk.gray("no")}`,
+    );
+    console.log(
+      `  src/ directory:  ${projectInfo.hasSrcDirectory ? chalk.green("yes") : chalk.gray("no")}`,
+    );
     console.log(`  Package manager: ${chalk.cyan(projectInfo.packageManager)}`);
 
     if (projectInfo.existingI18n) {
       console.log(`  Existing i18n:   ${chalk.yellow(projectInfo.existingI18n)}`);
+      console.log("");
+
+      if (projectInfo.existingI18n !== "next-intl") {
+        logger.warn(`Detected existing i18n library: ${chalk.bold(projectInfo.existingI18n)}`);
+        logger.warn(
+          `safe-i18n uses ${chalk.bold("next-intl")}. Running both libraries side-by-side may cause conflicts.`,
+        );
+
+        const confirmed = await confirmPrompt("Continue with initialization anyway?");
+        if (!confirmed) {
+          logger.info("Cancelled.");
+          return;
+        }
+      } else {
+        logger.info(`${chalk.bold("next-intl")} is already installed in this project.`);
+      }
     }
 
     const targetLocales = options.locales
-      ? options.locales.split(",").map((l) => l.trim()).filter(Boolean)
+      ? options.locales
+          .split(",")
+          .map((l) => l.trim())
+          .filter(Boolean)
       : [];
 
     const config: SafeI18nConfig = {

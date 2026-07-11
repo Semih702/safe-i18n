@@ -1,14 +1,10 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import { createInterface } from "node:readline";
 import { loadManifest, saveManifest } from "../../core/manifest.js";
 import { writeFileContent } from "../../utils/fs.js";
 import { logger, summary } from "../../utils/logger.js";
-import {
-  getProjectRoot,
-  getManifestPath,
-  resolveFromRoot,
-} from "../../utils/paths.js";
+import { getProjectRoot, getManifestPath, resolveFromRoot } from "../../utils/paths.js";
+import { confirmPrompt } from "../../utils/prompt.js";
 
 export const rollbackCommand = new Command("rollback")
   .description("Undo the last migration or sync operation")
@@ -18,32 +14,21 @@ export const rollbackCommand = new Command("rollback")
 
     const manifest = await loadManifest(root);
     if (!manifest || manifest.operations.length === 0) {
-      logger.error(
-        `No operations found in manifest at ${chalk.bold(getManifestPath(root))}`,
-      );
+      logger.error(`No operations found in manifest at ${chalk.bold(getManifestPath(root))}`);
       logger.error("Nothing to rollback.");
       process.exit(1);
     }
 
     const lastOp = manifest.operations[manifest.operations.length - 1]!;
 
-    logger.info(
-      `Last operation: ${chalk.bold(lastOp.type)} (${lastOp.appliedAt})`,
-    );
+    logger.info(`Last operation: ${chalk.bold(lastOp.type)} (${lastOp.appliedAt})`);
     logger.info(
       `This will restore ${chalk.bold(String(lastOp.backups.length))} file(s) to their pre-${lastOp.type} state.`,
     );
 
     if (!options.yes) {
-      const rl = createInterface({ input: process.stdin, output: process.stdout });
-      const answer = await new Promise<string>((resolve) => {
-        rl.question(
-          chalk.bold("Are you sure you want to rollback? (y/n): "),
-          (ans) => { rl.close(); resolve(ans.trim().toLowerCase()); },
-        );
-      });
-
-      if (answer !== "y" && answer !== "yes") {
+      const confirmed = await confirmPrompt("Are you sure you want to rollback?");
+      if (!confirmed) {
         logger.info("Cancelled.");
         return;
       }

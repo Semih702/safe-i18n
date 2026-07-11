@@ -18,7 +18,7 @@ export function buildTranslationPrompt(req: TranslationRequest): {
     "You are a professional translator for software UI strings.",
     "You translate user interface text while strictly preserving:",
     "- Variable placeholders such as {name}, {count}, {0}, {{value}}, etc.",
-    "- HTML tags like <b>, <br/>, <a href=\"...\">",
+    '- HTML tags like <b>, <br/>, <a href="...">',
     "- ICU message syntax including plural, select, and selectordinal blocks",
     "- Markdown formatting markers",
     "",
@@ -51,7 +51,9 @@ export function buildTranslationPrompt(req: TranslationRequest): {
   }
 
   const contextBlock =
-    contextLines.length > 0 ? `\n\n[CONTEXT — for understanding only, do NOT include in output]\n${contextLines.join("\n")}` : "";
+    contextLines.length > 0
+      ? `\n\n[CONTEXT — for understanding only, do NOT include in output]\n${contextLines.join("\n")}`
+      : "";
 
   const user = [
     `Translate the following text from "${req.sourceLocale}" to "${req.targetLocale}".`,
@@ -64,6 +66,55 @@ export function buildTranslationPrompt(req: TranslationRequest): {
   ]
     .filter((line) => line !== "")
     .join("\n");
+
+  return { system, user };
+}
+
+export function buildBatchTranslationPrompt(requests: TranslationRequest[]): {
+  system: string;
+  user: string;
+} {
+  const system = [
+    "You are a professional translator for software UI strings.",
+    "You translate user interface text while strictly preserving:",
+    "- Variable placeholders such as {name}, {count}, {0}, {{value}}, etc.",
+    '- HTML tags like <b>, <br/>, <a href="...">',
+    "- ICU message syntax including plural, select, and selectordinal blocks",
+    "- Markdown formatting markers",
+    "",
+    "You must NOT:",
+    "- Translate or modify route names, URL paths, API endpoints",
+    "- Translate technical identifiers, CSS class names, data attributes",
+    "- Translate brand names unless a known localized form exists",
+    "- Translate code snippets or programming keywords",
+    "- Add ANY new variables, placeholders, or tokens not present in the source",
+    "- Include context information, descriptions, file paths, or component names in your output",
+    "",
+    "Rules:",
+    "1. Return ONLY a JSON array. No markdown fences, explanations, wrappers, or metadata.",
+    '2. Each output item must be exactly: { "id": "...", "translatedText": "..." }.',
+    "3. Return one output item for every input item, using the same id values.",
+    "4. Preserve the exact whitespace pattern of each source text.",
+    "5. Maintain the same casing style for placeholders.",
+    "6. If a source text has no variables, its translatedText must have NO variables.",
+  ].join("\n");
+
+  const items = requests.map((request, index) => ({
+    id: String(index),
+    sourceLocale: request.sourceLocale,
+    targetLocale: request.targetLocale,
+    sourceText: request.sourceText,
+    description: request.description,
+    component: request.component,
+    filePath: request.filePath,
+    variables: request.variables,
+    preserveTokens: request.preserveTokens,
+  }));
+
+  const user = [
+    "Translate each input item. Return only the JSON array described by the system message.",
+    JSON.stringify(items, null, 2),
+  ].join("\n\n");
 
   return { system, user };
 }
@@ -93,10 +144,7 @@ export function buildKeySuggestionPrompt(req: KeySuggestionRequest): {
     '{ "namespace": "...", "key": "...", "description": "..." }',
   ].join("\n");
 
-  const contextLines: string[] = [
-    `Source text: "${req.sourceText}"`,
-    `File path: ${req.filePath}`,
-  ];
+  const contextLines: string[] = [`Source text: "${req.sourceText}"`, `File path: ${req.filePath}`];
   if (req.component) {
     contextLines.push(`Component name: ${req.component}`);
   }
@@ -132,7 +180,7 @@ export function buildFilterPrompt(entries: FilterEntry[]): {
     "- A phrase or sentence meant for end users to read",
     "",
     "You will receive a JSON array of strings with their IDs and context.",
-    "Return a JSON array of objects with the format: { \"id\": \"...\", \"skip\": true/false, \"reason\": \"...\" }",
+    'Return a JSON array of objects with the format: { "id": "...", "skip": true/false, "reason": "..." }',
     "Set skip=true ONLY for strings that should NOT be translated. Default to skip=false.",
     "Return ONLY the JSON array — no markdown fences, no explanation.",
   ].join("\n");

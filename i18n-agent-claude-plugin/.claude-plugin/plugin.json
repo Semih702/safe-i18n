@@ -1,0 +1,30 @@
+{
+  "name": "i18n-agent",
+  "displayName": "i18n Agent",
+  "version": "0.1.0",
+  "description": "Claude Code plugin for safe, deterministic i18n migration, locale validation, missing-key detection, and new-language setup in JavaScript and TypeScript projects.",
+  "author": {
+    "name": "Semih Berkay"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/Semih702/safe-i18n",
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "localization",
+    "translation",
+    "next-intl",
+    "i18next",
+    "react-i18next",
+    "vue-i18n",
+    "react",
+    "nextjs",
+    "vue",
+    "claude-code",
+    "developer-tools",
+    "static-analysis",
+    "validation"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

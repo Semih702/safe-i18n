@@ -5,19 +5,19 @@ import { loadConfig } from "../../core/config.js";
 import { scanProject } from "../../core/scanner.js";
 import { createMigrationPlan } from "../../core/planner.js";
 import { groupByFile, transformFileSource } from "../../codemod/transforms.js";
-import {
-  readFileContent,
-  writeFileContent,
-  fileExists,
-  readJsonFile,
-} from "../../utils/fs.js";
+import { readFileContent, writeFileContent, fileExists, readJsonFile } from "../../utils/fs.js";
 import { createProvider } from "../../llm/provider.js";
 import type { TranslationRequest } from "../../llm/provider.js";
 import { generateMessageFiles, mergeMessages } from "../../adapters/next-intl/messages.js";
 import { loadManifest, saveManifest } from "../../core/manifest.js";
 import { logger, summary } from "../../utils/logger.js";
-import { getProjectRoot, getManifestPath, resolveFromRoot } from "../../utils/paths.js";
-import type { MigrationEntry, ApplyManifest, ManifestOperation, FileBackup } from "../../core/types.js";
+import { getProjectRoot, resolveFromRoot } from "../../utils/paths.js";
+import type {
+  MigrationEntry,
+  ApplyManifest,
+  ManifestOperation,
+  FileBackup,
+} from "../../core/types.js";
 import type { FilterEntry } from "../../llm/provider.js";
 
 export const syncCommand = new Command("sync")
@@ -119,13 +119,17 @@ export const syncCommand = new Command("sync")
             if (entry && entry.action !== "skip") {
               entry.action = "skip";
               skippedByLlm++;
-              logger.info(`  Skip: ${chalk.dim(entry.sourceValue)}${result.reason ? ` (${result.reason})` : ""}`);
+              logger.info(
+                `  Skip: ${chalk.dim(entry.sourceValue)}${result.reason ? ` (${result.reason})` : ""}`,
+              );
             }
           }
         }
 
         if (skippedByLlm > 0) {
-          logger.success(`LLM pre-filter skipped ${chalk.bold(String(skippedByLlm))} non-translatable string(s).`);
+          logger.success(
+            `LLM pre-filter skipped ${chalk.bold(String(skippedByLlm))} non-translatable string(s).`,
+          );
         } else {
           logger.success("All strings confirmed as translatable.");
         }
@@ -221,7 +225,9 @@ export const syncCommand = new Command("sync")
         await writeFileContent(sourceFile, content);
       }
 
-      logger.success(`Updated ${config.sourceLocale}.json with ${newMessagesResult.keyCount} new key(s).`);
+      logger.success(
+        `Updated ${config.sourceLocale}.json with ${newMessagesResult.keyCount} new key(s).`,
+      );
 
       // ── Step 5: Translate ────────────────────────────────────────
       console.log("");
@@ -254,9 +260,7 @@ export const syncCommand = new Command("sync")
         }
 
         const allEntries: MigrationEntry[] = plan.entries.map((entry) => {
-          const translated = translatedEntries.find(
-            (te) => te.candidateId === entry.candidateId,
-          );
+          const translated = translatedEntries.find((te) => te.candidateId === entry.candidateId);
           return translated ?? entry;
         });
 

@@ -10,13 +10,19 @@ import { readFileContent, writeFileContent, fileExists } from "../../utils/fs.js
 import { createProvider } from "../../llm/provider.js";
 import type { TranslationRequest } from "../../llm/provider.js";
 import { addLocales } from "./add-locale.js";
-import { createInterface } from "node:readline";
 import { generateMessageFiles } from "../../adapters/next-intl/messages.js";
 import { setupNextIntl } from "../../adapters/next-intl/setup.js";
 import { validateProject } from "../../validators/project-validator.js";
 import { logger, summary } from "../../utils/logger.js";
-import { getProjectRoot, resolveFromRoot, getMigrationPlanPath } from "../../utils/paths.js";
-import type { SafeI18nConfig, ApplyManifest, ManifestOperation, FileBackup, MigrationEntry } from "../../core/types.js";
+import { confirmPrompt } from "../../utils/prompt.js";
+import { getProjectRoot, resolveFromRoot } from "../../utils/paths.js";
+import type {
+  SafeI18nConfig,
+  ApplyManifest,
+  ManifestOperation,
+  FileBackup,
+  MigrationEntry,
+} from "../../core/types.js";
 import type { FilterEntry } from "../../llm/provider.js";
 
 export const migrateCommand = new Command("migrate")
@@ -26,7 +32,10 @@ export const migrateCommand = new Command("migrate")
   .requiredOption("--to <locales>", "comma-separated target locale codes (e.g. tr,de,fr)")
   .option("--source <locale>", "source locale code", "en")
   .option("--provider <name>", "LLM provider (auto-detected from --api-key-env, or mock)")
-  .option("--api-key-env <name>", "environment variable name that holds the API key (e.g. OPENAI_API_KEY)")
+  .option(
+    "--api-key-env <name>",
+    "environment variable name that holds the API key (e.g. OPENAI_API_KEY)",
+  )
   .option("--model <model>", "LLM model name (default: gpt-4o-mini)")
   .option("--base-url <url>", "LLM API base URL (default: https://api.openai.com/v1)")
   .option("--dry-run", "preview changes without writing files")
@@ -53,8 +62,7 @@ export const migrateCommand = new Command("migrate")
         process.exit(1);
       }
 
-      const providerName = options.provider
-        ?? (options.apiKeyEnv ? "openai-compatible" : "mock");
+      const providerName = options.provider ?? (options.apiKeyEnv ? "openai-compatible" : "mock");
 
       // ── Step 1: Init ─────────────────────────────────────────────
       console.log("");
@@ -62,6 +70,35 @@ export const migrateCommand = new Command("migrate")
 
       const projectInfo = await analyzeProject(root);
       console.log(`  Framework: ${chalk.cyan(projectInfo.framework)}`);
+
+      if (projectInfo.existingI18n) {
+        console.log(`  Existing i18n: ${chalk.yellow(projectInfo.existingI18n)}`);
+        console.log("");
+
+        if (projectInfo.existingI18n !== "next-intl") {
+          logger.warn(`Detected existing i18n library: ${chalk.bold(projectInfo.existingI18n)}`);
+          logger.warn(
+            `safe-i18n uses ${chalk.bold("next-intl")}. Running both libraries side-by-side may cause conflicts.`,
+          );
+          logger.warn(
+            "You may want to remove the existing library first, or ensure both can coexist.",
+          );
+
+          const confirmed = await confirmPrompt("Continue with migration anyway?");
+          if (!confirmed) {
+            logger.info("Cancelled.");
+            return;
+          }
+        } else {
+          logger.info(`${chalk.bold("next-intl")} is already set up in this project.`);
+
+          const confirmed = await confirmPrompt("i18n detected. Continue adding new language(s)?");
+          if (!confirmed) {
+            logger.info("Cancelled.");
+            return;
+          }
+        }
+      }
 
       const config: SafeI18nConfig = {
         sourceLocale: options.source,
@@ -120,7 +157,10 @@ export const migrateCommand = new Command("migrate")
       );
 
       if (scanResult.candidates.length === 0) {
-        const sourceMessagesFile = resolveFromRoot(root, `${config.i18n.messagesPath}/${options.source}.json`);
+        const sourceMessagesFile = resolveFromRoot(
+          root,
+          `${config.i18n.messagesPath}/${options.source}.json`,
+        );
         if (await fileExists(sourceMessagesFile)) {
           logger.info("Project is already migrated.");
 
@@ -137,9 +177,7 @@ export const migrateCommand = new Command("migrate")
 
           if (newLocales.length === 0) {
             console.log("");
-            logger.info(
-              `Existing translations found: ${chalk.cyan(existingLocales.join(", "))}`,
-            );
+            logger.info(`Existing translations found: ${chalk.cyan(existingLocales.join(", "))}`);
             logger.success("All requested locales already exist. Nothing to do.");
             logger.info(
               `To add a new locale, run: ${chalk.bold("safe-i18n add-locale --to <locale>")}`,
@@ -153,19 +191,10 @@ export const migrateCommand = new Command("migrate")
               `Existing translations: ${chalk.cyan(existingLocales.join(", "))} (will be kept)`,
             );
           }
-          logger.info(
-            `New locale(s) to add: ${chalk.cyan(newLocales.join(", "))}`,
-          );
+          logger.info(`New locale(s) to add: ${chalk.cyan(newLocales.join(", "))}`);
 
-          const rl = createInterface({ input: process.stdin, output: process.stdout });
-          const answer = await new Promise<string>((resolve) => {
-            rl.question(
-              chalk.bold(`Add ${newLocales.join(", ")}? (y/n): `),
-              (ans) => { rl.close(); resolve(ans.trim().toLowerCase()); },
-            );
-          });
-
-          if (answer !== "y" && answer !== "yes") {
+          const confirmed = await confirmPrompt(`Add ${newLocales.join(", ")}?`);
+          if (!confirmed) {
             logger.info("Cancelled.");
             return;
           }
@@ -242,13 +271,17 @@ export const migrateCommand = new Command("migrate")
             if (entry && entry.action !== "skip") {
               entry.action = "skip";
               skippedByLlm++;
-              logger.info(`  Skip: ${chalk.dim(entry.sourceValue)}${result.reason ? ` (${result.reason})` : ""}`);
+              logger.info(
+                `  Skip: ${chalk.dim(entry.sourceValue)}${result.reason ? ` (${result.reason})` : ""}`,
+              );
             }
           }
         }
 
         if (skippedByLlm > 0) {
-          logger.success(`LLM pre-filter skipped ${chalk.bold(String(skippedByLlm))} non-translatable string(s).`);
+          logger.success(
+            `LLM pre-filter skipped ${chalk.bold(String(skippedByLlm))} non-translatable string(s).`,
+          );
         } else {
           logger.success("All strings confirmed as translatable.");
         }
@@ -292,9 +325,7 @@ export const migrateCommand = new Command("migrate")
             modifiedContent: result.code,
             timestamp: new Date().toISOString(),
           });
-          logger.success(
-            `  ${chalk.bold(group.filePath)}: ${result.applied.length} applied`,
-          );
+          logger.success(`  ${chalk.bold(group.filePath)}: ${result.applied.length} applied`);
         }
       }
 
@@ -307,9 +338,7 @@ export const migrateCommand = new Command("migrate")
             .filter((e) => e.candidate.filePath === b.filePath && e.action === "apply")
             .map((e) => e.candidateId),
         ),
-        skippedEntries: plan.entries
-          .filter((e) => e.action !== "apply")
-          .map((e) => e.candidateId),
+        skippedEntries: plan.entries.filter((e) => e.action !== "apply").map((e) => e.candidateId),
         generatedFiles: [],
       };
       const manifest: ApplyManifest = {
@@ -367,9 +396,7 @@ export const migrateCommand = new Command("migrate")
         }
 
         const allEntries: MigrationEntry[] = plan.entries.map((entry) => {
-          const translated = translatedEntries.find(
-            (te) => te.candidateId === entry.candidateId,
-          );
+          const translated = translatedEntries.find((te) => te.candidateId === entry.candidateId);
           return translated ?? entry;
         });
 
@@ -412,9 +439,7 @@ export const migrateCommand = new Command("migrate")
       if (validationResult.valid) {
         logger.success("Validation passed.");
       } else {
-        const errorCount = validationResult.issues.filter(
-          (i) => i.severity === "error",
-        ).length;
+        const errorCount = validationResult.issues.filter((i) => i.severity === "error").length;
         logger.warn(`Validation completed with ${errorCount} issue(s).`);
       }
 
@@ -441,8 +466,6 @@ export const migrateCommand = new Command("migrate")
       logger.info(
         `Default language: ${chalk.cyan(config.sourceLocale)}. Edit ${chalk.bold("i18n/request.ts")} to change it.`,
       );
-      logger.info(
-        `To undo all changes: ${chalk.bold("safe-i18n rollback")}`,
-      );
+      logger.info(`To undo all changes: ${chalk.bold("safe-i18n rollback")}`);
     },
   );

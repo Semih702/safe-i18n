@@ -1,0 +1,26 @@
+{
+  "name": "i18n-agent-claude-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code plugin: deterministic i18n analysis CLI",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "i18n-agent": "bin/i18n-agent"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build",
+    "test": "node --import tsx --test tests/locale-file-discovery.test.ts tests/key-analysis.test.ts tests/placeholder-analysis.test.ts tests/validation.test.ts tests/stub-generator.test.ts tests/project-detector.test.ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.7.0"
+  }
+}

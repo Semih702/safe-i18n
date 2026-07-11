@@ -16,7 +16,9 @@ import type {
 } from "./types.js";
 
 // Handle both ESM default and CJS interop for @babel/traverse
-const traverse = (typeof _traverse === "function" ? _traverse : (_traverse as { default: typeof _traverse }).default) as typeof _traverse;
+const traverse = (
+  typeof _traverse === "function" ? _traverse : (_traverse as { default: typeof _traverse }).default
+) as typeof _traverse;
 
 let candidateCounter = 0;
 
@@ -29,54 +31,216 @@ function resetCounter(): void {
 }
 
 const TRANSLATABLE_PROPS = new Set([
-  "placeholder", "aria-label", "aria-placeholder", "aria-roledescription",
-  "aria-valuetext", "title", "alt", "label",
+  "placeholder",
+  "aria-label",
+  "aria-placeholder",
+  "aria-roledescription",
+  "aria-valuetext",
+  "title",
+  "alt",
+  "label",
 ]);
 
 const SKIP_CALL_NAMES = new Set([
-  "console", "require", "import", "fetch", "addEventListener",
-  "removeEventListener", "setTimeout", "setInterval", "clearTimeout",
-  "clearInterval", "Promise", "Error", "TypeError", "JSON",
-  "Object", "Array", "Math", "Date", "RegExp", "URL",
-  "URLSearchParams", "localStorage", "sessionStorage",
-  "gtag", "track", "analytics", "mixpanel", "segment",
-  "ga", "fbq", "plausible", "posthog",
+  "console",
+  "require",
+  "import",
+  "fetch",
+  "addEventListener",
+  "removeEventListener",
+  "setTimeout",
+  "setInterval",
+  "clearTimeout",
+  "clearInterval",
+  "Promise",
+  "Error",
+  "TypeError",
+  "JSON",
+  "Object",
+  "Array",
+  "Math",
+  "Date",
+  "RegExp",
+  "URL",
+  "URLSearchParams",
+  "localStorage",
+  "sessionStorage",
+  "gtag",
+  "track",
+  "analytics",
+  "mixpanel",
+  "segment",
+  "ga",
+  "fbq",
+  "plausible",
+  "posthog",
 ]);
 
 const SKIP_PROP_NAMES = new Set([
-  "className", "class", "style", "id", "key", "ref",
-  "data-testid", "data-cy", "data-test", "data-test-id",
-  "href", "src", "action", "method", "type", "name",
-  "htmlFor", "role", "tabIndex", "value",
-  "d", "viewBox", "fill", "stroke", "strokeWidth", "strokeLinecap",
-  "strokeLinejoin", "clipPath", "clipRule", "fillRule", "fillOpacity",
-  "strokeOpacity", "gradientTransform", "transform",
-  "xmlns", "xmlnsXlink", "xlinkHref", "points", "cx", "cy", "r",
-  "rx", "ry", "x", "x1", "x2", "y", "y1", "y2", "width", "height",
-  "offset", "stopColor", "floodColor", "filterUnits", "stdDeviation",
-  "aria-hidden", "aria-atomic", "aria-busy", "aria-checked", "aria-current",
-  "aria-disabled", "aria-expanded", "aria-haspopup", "aria-invalid",
-  "aria-live", "aria-modal", "aria-multiline", "aria-multiselectable",
-  "aria-orientation", "aria-pressed", "aria-readonly", "aria-required",
-  "aria-selected", "aria-sort", "aria-autocomplete", "aria-colcount",
-  "aria-colindex", "aria-colspan", "aria-controls", "aria-describedby",
-  "aria-details", "aria-errormessage", "aria-flowto", "aria-labelledby",
-  "aria-owns", "aria-posinset", "aria-relevant", "aria-rowcount",
-  "aria-rowindex", "aria-rowspan", "aria-setsize",
-  "focusable", "data-prefix", "data-icon", "data-state", "data-side",
-  "data-align", "data-orientation", "data-disabled", "data-highlighted",
-  "data-slot", "data-value", "data-type", "data-radix-collection-item",
-  "poster", "preload", "autoPlay", "muted", "loop", "controls",
-  "align", "side", "sideOffset", "alignOffset", "autoComplete",
-  "autoCorrect", "autoCapitalize", "spellCheck", "inputMode",
-  "enterKeyHint", "pattern", "min", "max", "step", "maxLength",
-  "minLength", "disabled", "readOnly", "required", "checked",
-  "defaultValue", "defaultChecked", "accept", "multiple",
-  "cols", "rows", "wrap", "dir", "lang", "translate",
-  "crossOrigin", "referrerPolicy", "loading", "decoding", "fetchPriority",
-  "variant", "size", "color", "target", "rel", "as", "asChild",
-  "orientation", "direction", "position", "placement", "trigger",
-  "mode", "scope", "scheme", "shape", "slot", "kind",
+  "className",
+  "class",
+  "style",
+  "id",
+  "key",
+  "ref",
+  "data-testid",
+  "data-cy",
+  "data-test",
+  "data-test-id",
+  "href",
+  "src",
+  "action",
+  "method",
+  "type",
+  "name",
+  "htmlFor",
+  "role",
+  "tabIndex",
+  "value",
+  "d",
+  "viewBox",
+  "fill",
+  "stroke",
+  "strokeWidth",
+  "strokeLinecap",
+  "strokeLinejoin",
+  "clipPath",
+  "clipRule",
+  "fillRule",
+  "fillOpacity",
+  "strokeOpacity",
+  "gradientTransform",
+  "transform",
+  "xmlns",
+  "xmlnsXlink",
+  "xlinkHref",
+  "points",
+  "cx",
+  "cy",
+  "r",
+  "rx",
+  "ry",
+  "x",
+  "x1",
+  "x2",
+  "y",
+  "y1",
+  "y2",
+  "width",
+  "height",
+  "offset",
+  "stopColor",
+  "floodColor",
+  "filterUnits",
+  "stdDeviation",
+  "aria-hidden",
+  "aria-atomic",
+  "aria-busy",
+  "aria-checked",
+  "aria-current",
+  "aria-disabled",
+  "aria-expanded",
+  "aria-haspopup",
+  "aria-invalid",
+  "aria-live",
+  "aria-modal",
+  "aria-multiline",
+  "aria-multiselectable",
+  "aria-orientation",
+  "aria-pressed",
+  "aria-readonly",
+  "aria-required",
+  "aria-selected",
+  "aria-sort",
+  "aria-autocomplete",
+  "aria-colcount",
+  "aria-colindex",
+  "aria-colspan",
+  "aria-controls",
+  "aria-describedby",
+  "aria-details",
+  "aria-errormessage",
+  "aria-flowto",
+  "aria-labelledby",
+  "aria-owns",
+  "aria-posinset",
+  "aria-relevant",
+  "aria-rowcount",
+  "aria-rowindex",
+  "aria-rowspan",
+  "aria-setsize",
+  "focusable",
+  "data-prefix",
+  "data-icon",
+  "data-state",
+  "data-side",
+  "data-align",
+  "data-orientation",
+  "data-disabled",
+  "data-highlighted",
+  "data-slot",
+  "data-value",
+  "data-type",
+  "data-radix-collection-item",
+  "poster",
+  "preload",
+  "autoPlay",
+  "muted",
+  "loop",
+  "controls",
+  "align",
+  "side",
+  "sideOffset",
+  "alignOffset",
+  "autoComplete",
+  "autoCorrect",
+  "autoCapitalize",
+  "spellCheck",
+  "inputMode",
+  "enterKeyHint",
+  "pattern",
+  "min",
+  "max",
+  "step",
+  "maxLength",
+  "minLength",
+  "disabled",
+  "readOnly",
+  "required",
+  "checked",
+  "defaultValue",
+  "defaultChecked",
+  "accept",
+  "multiple",
+  "cols",
+  "rows",
+  "wrap",
+  "dir",
+  "lang",
+  "translate",
+  "crossOrigin",
+  "referrerPolicy",
+  "loading",
+  "decoding",
+  "fetchPriority",
+  "variant",
+  "size",
+  "color",
+  "target",
+  "rel",
+  "as",
+  "asChild",
+  "orientation",
+  "direction",
+  "position",
+  "placement",
+  "trigger",
+  "mode",
+  "scope",
+  "scheme",
+  "shape",
+  "slot",
+  "kind",
 ]);
 
 function getJSXElementName(node: JSXElement): string {
@@ -106,7 +270,9 @@ function getComponentName(ancestors: Node[]): string | null {
 }
 
 function detectComponentType(source: string, filePath: string): ComponentType {
-  const directiveMatch = source.match(/^\s*(?:\/\*[\s\S]*?\*\/\s*|\/\/[^\n]*\n\s*)*(["'])use (client|server)\1/);
+  const directiveMatch = source.match(
+    /^\s*(?:\/\*[\s\S]*?\*\/\s*|\/\/[^\n]*\n\s*)*(["'])use (client|server)\1/,
+  );
   if (directiveMatch) return directiveMatch[2] as ComponentType;
   const normalized = filePath.replace(/\\/g, "/");
   if (normalized.startsWith("app/") || normalized.includes("/app/")) return "server";
@@ -184,8 +350,15 @@ function isLikelyNonText(value: string): boolean {
   if (/^\.?\d/.test(value) && !/[a-zA-Z]{2,}/.test(value)) return true; // numeric-like
   const letters = value.replace(/[^a-zA-Z]/g, "").length;
   if (value.length > 10 && letters / value.length < 0.3) return true; // mostly non-letters
-  if (/^(flex|grid|block|inline|absolute|relative|fixed|sticky)\s/i.test(value) ||
-      (value.includes("-") && value.includes(" ") && /\b(px|py|mt|mb|ml|mr|pt|pb|pl|pr|gap|w-|h-|text-|bg-|border|rounded|font|items|justify|overflow|min-|max-)\b/.test(value))) return true; // Tailwind classes
+  if (
+    /^(flex|grid|block|inline|absolute|relative|fixed|sticky)\s/i.test(value) ||
+    (value.includes("-") &&
+      value.includes(" ") &&
+      /\b(px|py|mt|mb|ml|mr|pt|pb|pl|pr|gap|w-|h-|text-|bg-|border|rounded|font|items|justify|overflow|min-|max-)\b/.test(
+        value,
+      ))
+  )
+    return true; // Tailwind classes
   return false;
 }
 
@@ -240,7 +413,8 @@ function buildRiskContext(info: {
     isInTestId = true;
   }
   if (propName === "className" || propName === "class") isInClassName = true;
-  if (propName === "href" || propName === "src" || propName === "action") isInRouteDefinition = true;
+  if (propName === "href" || propName === "src" || propName === "action")
+    isInRouteDefinition = true;
 
   return {
     source,
@@ -323,8 +497,7 @@ function extractFromFile(
     },
 
     JSXAttribute(pathNode) {
-      const attrName =
-        t.isJSXIdentifier(pathNode.node.name) ? pathNode.node.name.name : null;
+      const attrName = t.isJSXIdentifier(pathNode.node.name) ? pathNode.node.name.name : null;
       if (!attrName) return;
 
       const value = pathNode.node.value;
@@ -463,7 +636,13 @@ function extractFromFile(
         }
 
         const variables = expr.expressions
-          .map((e) => (t.isIdentifier(e) ? e.name : t.isMemberExpression(e) && t.isIdentifier(e.property) ? e.property.name : "expr"))
+          .map((e) =>
+            t.isIdentifier(e)
+              ? e.name
+              : t.isMemberExpression(e) && t.isIdentifier(e.property)
+                ? e.property.name
+                : "expr",
+          )
           .filter(Boolean);
 
         const parent = pathNode.parent;
@@ -488,17 +667,97 @@ function extractFromFile(
           description: `Template literal with variables [${variables.join(", ")}] in ${component || "anonymous component"}`,
           variables,
           risk: "REVIEW_REQUIRED",
-          riskReason: "Template literal with interpolation — requires manual verification of variable usage.",
+          riskReason:
+            "Template literal with interpolation — requires manual verification of variable usage.",
           componentType: compType,
         });
       }
+    },
+
+    StringLiteral(pathNode) {
+      const parent = pathNode.parent;
+
+      // These locations are handled by the JSX-specific visitors above. Skipping
+      // them here prevents duplicate candidates while still allowing object and
+      // array literals nested inside JSX expressions to be scanned.
+      if (t.isJSXAttribute(parent) || t.isJSXExpressionContainer(parent)) return;
+      if (
+        t.isConditionalExpression(parent) &&
+        pathNode.parentPath?.parent &&
+        t.isJSXExpressionContainer(pathNode.parentPath.parent)
+      ) {
+        return;
+      }
+
+      if (
+        t.isImportDeclaration(parent) ||
+        t.isExportAllDeclaration(parent) ||
+        t.isExportNamedDeclaration(parent) ||
+        t.isTSLiteralType(parent)
+      ) {
+        return;
+      }
+
+      if (t.isObjectProperty(parent) && parent.key === pathNode.node) return;
+
+      const text = pathNode.node.value.trim();
+      if (!text || isLikelyNonText(text)) return;
+
+      const ancestors = pathNode.getAncestry().map((p) => p.node);
+      const component = getComponentName(ancestors);
+
+      let parentType = parent?.type ?? "unknown";
+      let propName: string | null = null;
+
+      if (t.isObjectProperty(parent)) {
+        parentType = "ObjectExpression";
+        if (t.isIdentifier(parent.key)) propName = parent.key.name;
+        else if (t.isStringLiteral(parent.key)) propName = parent.key.value;
+      } else if (t.isArrayExpression(parent)) {
+        parentType = "ArrayExpression";
+      } else {
+        return;
+      }
+
+      const riskCtx = buildRiskContext({
+        parentType,
+        propName,
+        source: text,
+        ancestors,
+      });
+      const { risk, reason } = classifyRisk(riskCtx);
+
+      candidates.push({
+        id: generateId(),
+        source: text,
+        filePath,
+        line: pathNode.node.loc?.start.line ?? 0,
+        column: pathNode.node.loc?.start.column ?? 0,
+        component,
+        parentElement: parentType,
+        propName,
+        route,
+        suggestedNamespace: inferNamespace(filePath, route, config.i18n.namespaceStrategy),
+        suggestedKey: generateKey(text, propName),
+        description: propName
+          ? `String literal in object property "${propName}" in ${component || "anonymous component"}`
+          : `String literal in ${parentType} in ${component || "anonymous component"}`,
+        variables: [],
+        risk,
+        riskReason: reason,
+        componentType: compType,
+      });
     },
   });
 
   return candidates;
 }
 
-function buildSummary(candidates: StringCandidate[], scannedFiles: string[], skippedFiles: string[]): ScanSummary {
+function buildSummary(
+  candidates: StringCandidate[],
+  scannedFiles: string[],
+  skippedFiles: string[],
+): ScanSummary {
   return {
     totalStrings: candidates.length,
     autoSafe: candidates.filter((c) => c.risk === "AUTO_SAFE").length,

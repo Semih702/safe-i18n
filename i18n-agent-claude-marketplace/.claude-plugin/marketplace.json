@@ -1,0 +1,16 @@
+{
+  "name": "semih-tools",
+  "owner": {
+    "name": "Semih Berkay"
+  },
+  "description": "Claude Code plugins for developer productivity and agent-native workflows.",
+  "plugins": [
+    {
+      "name": "i18n-agent",
+      "path": "./plugins/i18n-agent",
+      "description": "Safe deterministic i18n migration and locale validation for Claude Code.",
+      "version": "0.1.0",
+      "keywords": ["i18n", "localization", "translation", "claude-code"]
+    }
+  ]
+}

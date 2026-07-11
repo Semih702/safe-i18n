@@ -1,19 +1,11 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import { createInterface } from "node:readline";
 import { loadManifest } from "../../core/manifest.js";
-import {
-  writeFileContent,
-  fileExists,
-} from "../../utils/fs.js";
+import { writeFileContent, fileExists } from "../../utils/fs.js";
 import { logger, summary } from "../../utils/logger.js";
-import {
-  getProjectRoot,
-  getConfigDir,
-  resolveFromRoot,
-} from "../../utils/paths.js";
-import { rm, readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { getProjectRoot, resolveFromRoot } from "../../utils/paths.js";
+import { confirmPrompt } from "../../utils/prompt.js";
+import { rm, readFile, writeFile } from "node:fs/promises";
 
 export const resetCommand = new Command("reset")
   .description("Completely remove all i18n artifacts and restore original source files")
@@ -30,15 +22,8 @@ export const resetCommand = new Command("reset")
       logger.warn("  4. Remove next-intl setup from layout.tsx and next.config.ts");
       console.log("");
 
-      const rl = createInterface({ input: process.stdin, output: process.stdout });
-      const answer = await new Promise<string>((resolve) => {
-        rl.question(
-          chalk.bold.red("Are you sure you want to reset everything? (y/n): "),
-          (ans) => { rl.close(); resolve(ans.trim().toLowerCase()); },
-        );
-      });
-
-      if (answer !== "y" && answer !== "yes") {
+      const confirmed = await confirmPrompt("Are you sure you want to reset everything?");
+      if (!confirmed) {
         logger.info("Cancelled.");
         return;
       }
@@ -85,7 +70,10 @@ export const resetCommand = new Command("reset")
       const origLayout = layout;
 
       layout = layout.replace(/import \{ NextIntlClientProvider \} from "next-intl";\n?/g, "");
-      layout = layout.replace(/import \{ getLocale, getMessages \} from "next-intl\/server";\n?/g, "");
+      layout = layout.replace(
+        /import \{ getLocale, getMessages \} from "next-intl\/server";\n?/g,
+        "",
+      );
       layout = layout.replace(/\s*const locale = await getLocale\(\);\n?/g, "\n");
       layout = layout.replace(/\s*const messages = await getMessages\(\);\n?/g, "");
       layout = layout.replace(/<NextIntlClientProvider messages=\{messages\}>\n?\s*/g, "");
@@ -109,7 +97,10 @@ export const resetCommand = new Command("reset")
       let config = await readFile(nextConfigPath, "utf8");
       const origConfig = config;
 
-      config = config.replace(/import createNextIntlPlugin from ["']next-intl\/plugin["'];?\n?/g, "");
+      config = config.replace(
+        /import createNextIntlPlugin from ["']next-intl\/plugin["'];?\n?/g,
+        "",
+      );
       config = config.replace(/const withNextIntl = createNextIntlPlugin\([^)]*\);?\n?/g, "");
       config = config.replace(/export default withNextIntl\((\w+)\)/g, "export default $1");
 
@@ -120,12 +111,7 @@ export const resetCommand = new Command("reset")
     }
 
     // Step 4: Delete generated directories and files
-    const toDelete = [
-      "messages",
-      "i18n",
-      ".safe-i18n",
-      "safe-i18n.config.json",
-    ];
+    const toDelete = ["messages", "i18n", ".safe-i18n", "safe-i18n.config.json"];
 
     for (const item of toDelete) {
       const full = resolveFromRoot(root, item);

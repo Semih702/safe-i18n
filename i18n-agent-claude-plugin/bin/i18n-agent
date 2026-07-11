@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# i18n-agent — Claude Code plugin CLI entry point
+# This script resolves the plugin root and runs the built JavaScript CLI.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DIST="$PLUGIN_ROOT/dist/index.js"
+
+if [ ! -f "$DIST" ]; then
+  echo "i18n-agent: CLI not built. Run 'npm run build' inside the plugin directory." >&2
+  echo "  cd $PLUGIN_ROOT && npm install && npm run build" >&2
+  exit 1
+fi
+
+exec node "$DIST" "$@"

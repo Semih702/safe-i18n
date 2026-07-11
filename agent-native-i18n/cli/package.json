@@ -1,0 +1,26 @@
+{
+  "name": "i18n-agent",
+  "version": "0.1.0",
+  "description": "Deterministic i18n analysis CLI for Claude Code agent workflows",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "i18n-agent": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "fast-glob": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
